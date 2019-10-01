@@ -41,8 +41,8 @@ func (fc *fakeClient) Close() {
 	return
 }
 
-func newFakeClientAgent() *Agent {
-	return &Agent{client: &fakeClient{}}
+func newFakeClientAgent() *GethAgent {
+	return &GethAgent{client: &fakeClient{}}
 }
 
 func TestCallMethod(t *testing.T) {
@@ -63,6 +63,10 @@ func TestCallMethod(t *testing.T) {
 		{
 			"eth_getBalance",
 			[]string{"0x12345678", "latest"},
+		},
+		{
+			"eth_blockNumber",
+			[]string{},
 		},
 		{
 			"eth_getTransactionCount",

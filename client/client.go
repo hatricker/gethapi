@@ -13,18 +13,24 @@ type rpcClient interface {
 	Close()
 }
 
-//Agent wraps ethereum rpc client
-type Agent struct {
+//Agent defines a RPC agent interface
+type Agent interface {
+	CallMethod(result interface{}, method string, params []string) error
+	Close()
+}
+
+//GethAgent wraps ethereum rpc client
+type GethAgent struct {
 	client rpcClient
 }
 
 //New returns an Ethereum rpc client
-func New(url string) (*Agent, error) {
+func New(url string) (Agent, error) {
 	client, err := rpc.Dial(url)
 	if err != nil {
 		return nil, err
 	}
-	return &Agent{client: client}, nil
+	return &GethAgent{client: client}, nil
 }
 
 func getMethodArgs(args []string) []interface{} {
@@ -45,17 +51,15 @@ func inDefaultBlockNum(s string) bool {
 }
 
 //Close closes RPC client
-func (a *Agent) Close() {
-	a.client.Close()
+func (ga *GethAgent) Close() {
+	ga.client.Close()
 }
 
-//EthGetBalance gets account balance
-func (a *Agent) EthGetBalance(result interface{}, params []string) error {
-	return a.client.Call(result, "eth_getBalance", params[0], params[1])
+func (ga *GethAgent) ethGetBalance(result interface{}, params []string) error {
+	return ga.client.Call(result, "eth_getBalance", params[0], params[1])
 }
 
-//EthGetBlockByNumber gets block by block number
-func (a *Agent) EthGetBlockByNumber(result interface{}, params []string) error {
+func (ga *GethAgent) ethGetBlockByNumber(result interface{}, params []string) error {
 	if len(params) < 2 {
 		return fmt.Errorf("need to provide block number(0x...) and transaction flag(bool)")
 	}
@@ -71,19 +75,19 @@ func (a *Agent) EthGetBlockByNumber(result interface{}, params []string) error {
 	if err != nil {
 		return err
 	}
-	return a.client.Call(result, "eth_getBlockByNumber", blockNum, fullTx)
+	return ga.client.Call(result, "eth_getBlockByNumber", blockNum, fullTx)
 }
 
 //CallMethod calls RPC method with params
-func (a *Agent) CallMethod(result interface{}, method string, params []string) error {
+func (ga *GethAgent) CallMethod(result interface{}, method string, params []string) error {
 	var err error
 	switch method {
 	case "eth_getBalance":
-		err = a.EthGetBalance(result, params)
+		err = ga.ethGetBalance(result, params)
 	case "eth_getBlockByNumber":
-		err = a.EthGetBlockByNumber(result, params)
+		err = ga.ethGetBlockByNumber(result, params)
 	default:
-		err = a.client.Call(result, method, getMethodArgs(params)...)
+		err = ga.client.Call(result, method, getMethodArgs(params)...)
 	}
 	return err
 }
